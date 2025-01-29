@@ -1,0 +1,1 @@
+LogEvent is licensed under Mozilla Public Licence https://www.mozilla.org/en-US/MPL/
