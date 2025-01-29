@@ -4,10 +4,12 @@ using System.Data.SQLite;
 // https://images.amazon.com/images/P/B01CKSRTQC.jpg
 
 var kindleExportDirectory = @"D:\data\exports\Kindle\";
+var year = 2024;
 
 var relation = Path.Combine(kindleExportDirectory, @"Digital.SeriesContent.Relation.2/BookRelation.csv");
 var content = Path.Combine(kindleExportDirectory, @"D:/data/exports/Kindle/Kindle.KindleContentUpdate/datasets/Kindle.KindleContentUpdate.ContentUpdates/Kindle.KindleContentUpdate.ContentUpdates.csv");
 var whisper = Path.Combine(kindleExportDirectory, @"D:/data/exports/Kindle/Digital.Content.Whispersync/whispersync.csv");
+var metadata = Path.Combine(kindleExportDirectory, @"D:/data/exports/Kindle/Kindle.KindleDocs/datasets/Kindle.KindleDocs.DocumentMetadata/Kindle.KindleDocs.DocumentMetadata.csv");
 
 var readingSession = Path.Combine(kindleExportDirectory, @"Kindle.ReadingInsights/datasets/Kindle.reading-insights-sessions_with_adjustments/Kindle.reading-insights-sessions_with_adjustments.csv");
 
@@ -38,6 +40,13 @@ var books = new List<(string id, string title)>();
         var title = readRow["\"Product Name\""].ToString();
         if (books.Count(w => w.id == id) == 0)
             books.Add((id, title));
+        if (books.First(w => w.id == id).title == "Not Available")
+        {
+            var f = books.First(w => w.id == id);
+            books.Remove(f);
+            f.title = title;
+            books.Add(f);
+        }
     }
 }
 
@@ -50,6 +59,32 @@ var books = new List<(string id, string title)>();
         var title = readRow["Product Name"].ToString();
         if (books.Count(w => w.id == id) == 0)
             books.Add((id, title));
+        if (books.First(w => w.id == id).title == "Not Available")
+        {
+            var f = books.First(w => w.id == id);
+            books.Remove(f);
+            f.title = title;
+            books.Add(f);
+        }
+    }
+}
+
+// metadata
+{
+    using var reader = Sep.Reader().FromFile(metadata);
+    foreach (var readRow in reader)
+    {
+        var id = readRow["DocumentId"].ToString();
+        var title = readRow["Title"].ToString();
+        if (books.Count(w => w.id == id) == 0)
+            books.Add((id, title));
+        if (books.First(w => w.id == id).title == "Not Available")
+        {
+            var f = books.First(w => w.id == id);
+            books.Remove(f);
+            f.title = title;
+            books.Add(f);
+        }
     }
 }
 
@@ -85,7 +120,7 @@ foreach (var id in distinct)
 foreach (var book in books.Distinct())
 {
     var x = books.Distinct().Where(w => w.title.Contains("Frost"));
-    var totalTime = readingEvents.Where(w => w.asin == book.id && Convert.ToDateTime(w.start) >= new DateTime(2025, 1, 1)).Sum(s => Convert.ToInt32(s.totalmilliseconds));
+    var totalTime = readingEvents.Where(w => w.asin == book.id && Convert.ToDateTime(w.start) >= new DateTime(year, 1, 1) && Convert.ToDateTime(w.start) < new DateTime(year+1, 1, 1)).Sum(s => Convert.ToInt32(s.totalmilliseconds));
     if (totalTime > 0)
         Console.WriteLine($"{book.title} read for {(totalTime / 1000) / 60} minutes");
 }
